@@ -1,0 +1,427 @@
+/* ---------- Colores y tipografía ---------- */
+:root {
+  --crema: #fff7ec;
+  --crema-oscura: #f7e8d3;
+  --tomate: #d6452b;
+  --tomate-oscuro: #a8311c;
+  --albahaca: #2f7d4f;
+  --cafe: #2b1d14;
+  --cafe-suave: #6b5442;
+  --blanco: #ffffff;
+  --sombra: 0 10px 30px rgba(80, 40, 10, 0.12);
+  --radio: 18px;
+  --titulos: 'Fredoka', system-ui, sans-serif;
+  --texto: 'Nunito', system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--texto);
+  color: var(--cafe);
+  background:
+    radial-gradient(circle at 10% 0%, #ffe3c2 0, transparent 40%),
+    radial-gradient(circle at 100% 30%, #ffd9cf 0, transparent 35%),
+    var(--crema);
+}
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+  text-align: center;
+  padding: 40px 16px 8px;
+}
+
+.marca {
+  display: inline-block;
+  font-family: var(--titulos);
+  font-weight: 600;
+  color: var(--tomate);
+  background: var(--blanco);
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: var(--sombra);
+}
+
+.encabezado h1 {
+  font-family: var(--titulos);
+  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  margin: 16px 0 6px;
+  letter-spacing: -0.5px;
+}
+
+.encabezado p {
+  margin: 0 auto;
+  max-width: 520px;
+  color: var(--cafe-suave);
+}
+
+/* ---------- Distribución ---------- */
+.contenido {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+  align-items: start;
+}
+
+.panel-pizza {
+  position: sticky;
+  top: 20px;
+}
+
+/* ---------- Pizza ---------- */
+.vista-pizza {
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+.pizza-escena {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.pizza-sombra {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -4%;
+  height: 8%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(80, 40, 10, 0.28), transparent 70%);
+  transform: scaleX(var(--escala, 0.89));
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pizza {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--escala, 0.89));
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Las 3 masas están encimadas; solo se ve la elegida */
+.pizza-base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  filter: drop-shadow(0 6px 10px rgba(80, 40, 10, 0.25));
+}
+
+.pizza-base.activa {
+  opacity: 1;
+}
+
+.pizza-ingredientes {
+  position: absolute;
+  inset: 0;
+}
+
+/* Cada pieza se coloca por su centro y cae sobre la pizza */
+.pieza {
+  position: absolute;
+  width: var(--tam);
+  height: var(--tam);
+  object-fit: contain;
+  transform: translate(-50%, -50%) rotate(var(--giro));
+  filter: drop-shadow(0 1px 1.5px rgba(40, 20, 5, 0.45));
+  transition:
+    left 0.5s ease,
+    top 0.5s ease;
+  animation: caer 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+
+@keyframes caer {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -180%) rotate(var(--giro)) scale(1.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--giro)) scale(1);
+  }
+}
+
+.grupo-ingrediente {
+  transition: opacity 0.3s ease;
+}
+
+.grupo-ingrediente.saliendo {
+  opacity: 0;
+}
+
+/* ---------- Resumen ---------- */
+.tarjeta-resumen {
+  margin-top: 18px;
+  background: var(--blanco);
+  border-radius: var(--radio);
+  padding: 18px 22px;
+  box-shadow: var(--sombra);
+  text-align: center;
+}
+
+.tarjeta-resumen h2 {
+  font-family: var(--titulos);
+  font-size: 1.1rem;
+  margin: 0 0 6px;
+  color: var(--tomate);
+}
+
+.tarjeta-resumen p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ---------- Formulario ---------- */
+.armador fieldset {
+  border: none;
+  margin: 0 0 28px;
+  padding: 0;
+}
+
+.armador legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font-family: var(--titulos);
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.paso {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--tomate);
+  color: var(--blanco);
+  font-size: 1rem;
+}
+
+.contador {
+  margin-left: auto;
+  font-family: var(--texto);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--albahaca);
+  background: #e3f3e8;
+  padding: 4px 12px;
+  border-radius: 999px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.contador.lleno {
+  color: var(--tomate-oscuro);
+  background: #fde2dc;
+}
+
+.opciones {
+  display: grid;
+  gap: 12px;
+}
+
+.opciones-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.opciones-ingredientes {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* ---------- Tarjetas de opciones ---------- */
+.opcion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px 12px;
+  background: var(--blanco);
+  border: 2px solid transparent;
+  border-radius: var(--radio);
+  box-shadow: 0 2px 8px rgba(80, 40, 10, 0.06);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.opcion:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sombra);
+}
+
+/* El input real queda invisible pero sigue funcionando con teclado */
+.opcion input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.opcion:has(input:checked) {
+  border-color: var(--tomate);
+  background: #fff1ec;
+  animation: rebote 0.35s ease;
+}
+
+.opcion:has(input:focus-visible) {
+  outline: 3px solid #f5a623;
+  outline-offset: 2px;
+}
+
+.opcion-nombre {
+  font-weight: 700;
+}
+
+.opcion-precio {
+  font-size: 0.85rem;
+  color: var(--cafe-suave);
+}
+
+.opcion-icono {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+}
+
+.opcion-icono img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(80, 40, 10, 0.2));
+  transition: transform 0.3s ease;
+}
+
+.opcion:hover .opcion-icono img {
+  transform: rotate(-8deg) scale(1.05);
+}
+
+/* Íconos de tamaño: la misma pizza, más chica o más grande */
+.opcion-tamano[data-id='chica'] .opcion-icono img {
+  scale: 0.62;
+}
+
+.opcion-tamano[data-id='mediana'] .opcion-icono img {
+  scale: 0.8;
+}
+
+/* Ingredientes: la pieza un poco más chica dentro de su cuadro */
+.opcion-ingrediente .opcion-icono img {
+  scale: 0.8;
+}
+
+/* ---------- Animaciones de las tarjetas ---------- */
+@keyframes rebote {
+  40% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.sacudir {
+  animation: sacudir 0.4s ease;
+}
+
+@keyframes sacudir {
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+/* ---------- Aviso flotante (máximo de ingredientes) ---------- */
+.aviso {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: var(--tomate);
+  color: var(--blanco);
+  font-weight: 700;
+  box-shadow: 0 12px 30px rgba(168, 49, 28, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.aviso:empty {
+  display: none;
+}
+
+.aviso.visible {
+  animation: aparecer-y-desvanecer 2.6s ease forwards;
+}
+
+@keyframes aparecer-y-desvanecer {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+  12%,
+  80% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 820px) {
+  .contenido {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-top: 16px;
+  }
+
+  .panel-pizza {
+    position: static;
+  }
+
+  .vista-pizza {
+    max-width: 300px;
+  }
+
+  .opciones-ingredientes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Personas que prefieren menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

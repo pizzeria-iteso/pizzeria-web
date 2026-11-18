@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Arma tu pizza: elige tamaño, masa e ingredientes." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>Arma tu pizza</title>
+  </head>
+  <body>
+    <header class="encabezado">
+      <span class="marca">🍕 Pizzería</span>
+      <h1>Arma tu pizza</h1>
+      <p>Elige tamaño, masa y hasta 5 ingredientes. La vemos crecer mientras la armas.</p>
+    </header>
+
+    <main class="contenido">
+      <section class="panel-pizza" aria-label="Tu pizza">
+        <div id="vista-pizza" class="vista-pizza"></div>
+        <div class="tarjeta-resumen">
+          <h2>Tu pizza</h2>
+          <p id="resumen" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <form id="armador" class="armador" onsubmit="return false">
+        <fieldset>
+          <legend><span class="paso">1</span> Tamaño</legend>
+          <div id="opciones-tamano" class="opciones opciones-3"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span class="paso">2</span> Masa</legend>
+          <div id="opciones-masa" class="opciones opciones-3"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>
+            <span class="paso">3</span> Ingredientes
+            <span id="contador-ingredientes" class="contador"></span>
+          </legend>
+          <div id="opciones-ingredientes" class="opciones opciones-ingredientes"></div>
+        </fieldset>
+
+        <p id="aviso" class="aviso" role="status" aria-live="polite"></p>
+      </form>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
