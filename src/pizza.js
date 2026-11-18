@@ -121,6 +121,7 @@ export function crearPizza(contenedor, menu) {
       pieza.className = 'pieza'
       pieza.src = imagenIngrediente(id, lugar.variante)
       pieza.alt = ''
+      pieza.addEventListener('error', () => pieza.remove()) // ingrediente sin foto: no se dibuja
       pieza.style.setProperty('--tam', `${(TAMANO_PIEZA[id] ?? 0.12) * 100 * lugar.escala}%`)
       pieza.style.setProperty('--giro', `${lugar.giro}deg`)
       pieza.style.animationDelay = `${i * 55}ms`

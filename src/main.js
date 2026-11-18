@@ -1,20 +1,22 @@
 import './style.css'
-import { menuEjemplo } from './menu-ejemplo.js'
+import { obtenerMenu } from './api.js'
 import { dinero } from './formato.js'
 import { crearPizza, imagenMasa, imagenIngrediente, precargarImagenes } from './pizza.js'
 
-// Por ahora usamos el menú de ejemplo; en el issue web #2 se pide a la API (GET /menu)
-const menu = menuEjemplo
+// El menú llega de la API (GET /menu) al cargar la página
+let menu = null
+let pizza = null
 
 // Lo que el cliente va eligiendo
 const estado = {
-  sizeId: 'mediana',
-  crustId: 'tradicional',
+  sizeId: null,
+  crustId: null,
   toppingIds: [],
 }
 
-precargarImagenes(menu)
-const pizza = crearPizza(document.querySelector('#vista-pizza'), menu)
+const armador = document.querySelector('#armador')
+const estadoCarga = document.querySelector('#estado-carga')
+const vistaPizza = document.querySelector('#vista-pizza')
 const contenedorTamanos = document.querySelector('#opciones-tamano')
 const contenedorMasas = document.querySelector('#opciones-masa')
 const contenedorIngredientes = document.querySelector('#opciones-ingredientes')
@@ -35,29 +37,53 @@ function imagenDeOpcion(grupo, id) {
   return imagenIngrediente(id)
 }
 
+function crearTexto(clase, texto) {
+  const span = document.createElement('span')
+  span.className = clase
+  span.textContent = texto // textContent: el texto de la API nunca se interpreta como HTML
+  return span
+}
+
 // Crea una tarjeta seleccionable (radio para tamaño/masa, checkbox para ingredientes)
 function crearOpcion({ tipo, grupo, item, marcada }) {
   const etiqueta = document.createElement('label')
   etiqueta.className = `opcion opcion-${grupo}`
   etiqueta.dataset.id = item.id
-  etiqueta.innerHTML = `
-    <input type="${tipo}" name="${grupo}" value="${item.id}" ${marcada ? 'checked' : ''} />
-    <span class="opcion-icono" aria-hidden="true"><img src="${imagenDeOpcion(grupo, item.id)}" alt="" /></span>
-    <span class="opcion-nombre">${item.name}</span>
-    <span class="opcion-precio">${textoPrecio(grupo, item.priceCents)}</span>`
+
+  const input = document.createElement('input')
+  input.type = tipo
+  input.name = grupo
+  input.value = item.id
+  input.checked = marcada
+
+  const icono = document.createElement('span')
+  icono.className = 'opcion-icono'
+  icono.setAttribute('aria-hidden', 'true')
+  const imagen = document.createElement('img')
+  imagen.src = imagenDeOpcion(grupo, item.id)
+  imagen.alt = ''
+  imagen.addEventListener('error', () => imagen.remove()) // por si la API trae algo sin foto
+  icono.append(imagen)
+
+  etiqueta.append(
+    input,
+    icono,
+    crearTexto('opcion-nombre', item.name),
+    crearTexto('opcion-precio', textoPrecio(grupo, item.priceCents))
+  )
   return etiqueta
 }
 
 function pintarOpciones() {
-  for (const item of menu.sizes) {
-    contenedorTamanos.append(crearOpcion({ tipo: 'radio', grupo: 'tamano', item, marcada: item.id === estado.sizeId }))
-  }
-  for (const item of menu.crusts) {
-    contenedorMasas.append(crearOpcion({ tipo: 'radio', grupo: 'masa', item, marcada: item.id === estado.crustId }))
-  }
-  for (const item of menu.toppings) {
-    contenedorIngredientes.append(crearOpcion({ tipo: 'checkbox', grupo: 'ingrediente', item, marcada: false }))
-  }
+  contenedorTamanos.replaceChildren(
+    ...menu.sizes.map((item) => crearOpcion({ tipo: 'radio', grupo: 'tamano', item, marcada: item.id === estado.sizeId }))
+  )
+  contenedorMasas.replaceChildren(
+    ...menu.crusts.map((item) => crearOpcion({ tipo: 'radio', grupo: 'masa', item, marcada: item.id === estado.crustId }))
+  )
+  contenedorIngredientes.replaceChildren(
+    ...menu.toppings.map((item) => crearOpcion({ tipo: 'checkbox', grupo: 'ingrediente', item, marcada: false }))
+  )
 }
 
 function nombreDe(lista, id) {
@@ -78,14 +104,18 @@ function actualizarPantalla() {
   contador.classList.toggle('lleno', estado.toppingIds.length === menu.maxToppings)
 
   const ingredientes = estado.toppingIds.map((id) => nombreDe(menu.toppings, id))
-  resumen.innerHTML = `
-    <strong>${nombreDe(menu.sizes, estado.sizeId)}</strong> ·
-    masa <strong>${nombreDe(menu.crusts, estado.crustId).toLowerCase()}</strong><br />
-    ${ingredientes.length ? ingredientes.join(', ') : 'Sin ingredientes extra'}`
+  const masa = nombreDe(menu.crusts, estado.crustId).toLowerCase()
+  resumen.replaceChildren(
+    Object.assign(document.createElement('strong'), { textContent: nombreDe(menu.sizes, estado.sizeId) }),
+    ' · masa ',
+    Object.assign(document.createElement('strong'), { textContent: masa }),
+    document.createElement('br'),
+    ingredientes.length ? ingredientes.join(', ') : 'Sin ingredientes extra'
+  )
 }
 
 // Un solo "escuchador" para todo el formulario
-document.querySelector('#armador').addEventListener('change', (evento) => {
+armador.addEventListener('change', (evento) => {
   const input = evento.target
 
   if (input.name === 'tamano') estado.sizeId = input.value
@@ -112,5 +142,42 @@ document.querySelector('#armador').addEventListener('change', (evento) => {
   actualizarPantalla()
 })
 
-pintarOpciones()
-actualizarPantalla()
+// Elige "mediana" y "tradicional" si existen; si no, la primera opción
+function opcionInicial(lista, preferida) {
+  return lista.some((item) => item.id === preferida) ? preferida : lista[0]?.id
+}
+
+async function iniciar() {
+  armador.classList.add('cargando')
+  estadoCarga.classList.remove('error')
+  estadoCarga.textContent = 'Cargando el menú…'
+
+  try {
+    menu = await obtenerMenu()
+  } catch (error) {
+    console.error(error)
+    estadoCarga.classList.add('error')
+    estadoCarga.textContent = 'No pudimos cargar el menú. Revisa tu conexión e inténtalo de nuevo. '
+    const reintentar = document.createElement('button')
+    reintentar.type = 'button'
+    reintentar.textContent = 'Reintentar'
+    reintentar.addEventListener('click', iniciar)
+    estadoCarga.append(reintentar)
+    return
+  }
+
+  estado.sizeId = opcionInicial(menu.sizes, 'mediana')
+  estado.crustId = opcionInicial(menu.crusts, 'tradicional')
+  estado.toppingIds = []
+
+  precargarImagenes(menu)
+  vistaPizza.replaceChildren()
+  pizza = crearPizza(vistaPizza, menu)
+  pintarOpciones()
+  actualizarPantalla()
+
+  armador.classList.remove('cargando')
+  estadoCarga.textContent = ''
+}
+
+iniciar()

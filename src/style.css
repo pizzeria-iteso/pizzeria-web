@@ -241,6 +241,46 @@ body {
   grid-template-columns: repeat(4, 1fr);
 }
 
+/* ---------- Mientras carga el menú (o si falla) ---------- */
+.armador.cargando fieldset {
+  display: none;
+}
+
+.estado-carga {
+  margin: 0 0 20px;
+  padding: 18px 22px;
+  border-radius: var(--radio);
+  background: var(--blanco);
+  box-shadow: var(--sombra);
+  text-align: center;
+  font-weight: 700;
+  color: var(--cafe-suave);
+}
+
+.estado-carga:empty {
+  display: none;
+}
+
+.estado-carga.error {
+  color: var(--tomate-oscuro);
+  background: #fff1ec;
+}
+
+.estado-carga button {
+  margin-left: 8px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--tomate);
+  color: var(--blanco);
+  font: inherit;
+  cursor: pointer;
+}
+
+.estado-carga button:hover {
+  background: var(--tomate-oscuro);
+}
+
 /* ---------- Tarjetas de opciones ---------- */
 .opcion {
   position: relative;
