@@ -78,8 +78,10 @@ body {
 }
 
 /* ---------- Pizza ---------- */
+/* En pantallas bajas la pizza se achica para que el botón Ordenar siempre se vea */
 .vista-pizza {
-  max-width: 460px;
+  width: 100%;
+  max-width: min(440px, 48vh);
   margin: 0 auto;
 }
 
@@ -180,6 +182,281 @@ body {
 .tarjeta-resumen p {
   margin: 0;
   line-height: 1.5;
+}
+
+/* ---------- Pedido: cantidad, total y botón ---------- */
+.pedido {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--crema-oscura);
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+
+.pedido[hidden] {
+  display: none;
+}
+
+.fila-pedido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.etiqueta {
+  font-weight: 700;
+  color: var(--cafe-suave);
+}
+
+.cantidad {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--crema);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.cantidad button {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: var(--blanco);
+  color: var(--tomate);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(80, 40, 10, 0.15);
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.cantidad button:hover:not(:disabled) {
+  background: #fff1ec;
+}
+
+.cantidad button:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+.cantidad button:disabled {
+  color: #c9b8a8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.cantidad output {
+  min-width: 2ch;
+  text-align: center;
+  font-family: var(--titulos);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.fila-total {
+  align-items: baseline;
+}
+
+.total {
+  display: inline-block;
+  font-family: var(--titulos);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--tomate);
+  font-variant-numeric: tabular-nums;
+}
+
+.total.cambio {
+  animation: salto 0.45s ease;
+}
+
+@keyframes salto {
+  30% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.boton-principal {
+  position: relative;
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--tomate), var(--tomate-oscuro));
+  color: var(--blanco);
+  font-family: var(--titulos);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(168, 49, 28, 0.3);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.boton-principal:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(168, 49, 28, 0.38);
+}
+
+.boton-principal:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.boton-principal:focus-visible,
+.cantidad button:focus-visible {
+  outline: 3px solid #f5a623;
+  outline-offset: 3px;
+}
+
+.boton-principal:disabled {
+  cursor: progress;
+  filter: saturate(0.6) brightness(1.05);
+}
+
+/* Ruedita mientras se envía */
+.boton-principal.enviando::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 10px;
+  vertical-align: -2px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: var(--blanco);
+  border-radius: 50%;
+  animation: girar 0.7s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-pedido {
+  margin: 0;
+  color: var(--tomate-oscuro);
+  font-weight: 700;
+  text-align: center;
+}
+
+.error-pedido:empty {
+  display: none;
+}
+
+/* ---------- Confirmación del pedido ---------- */
+.confirmacion {
+  width: min(420px, calc(100% - 32px));
+  padding: 32px 28px 28px;
+  border: none;
+  border-radius: 24px;
+  background: var(--blanco);
+  color: var(--cafe);
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(60, 25, 5, 0.35);
+}
+
+.confirmacion[open] {
+  animation: aparecer-tarjeta 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+
+.confirmacion::backdrop {
+  background: rgba(43, 29, 20, 0.45);
+  backdrop-filter: blur(3px);
+}
+
+@keyframes aparecer-tarjeta {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.92);
+  }
+}
+
+.confirmacion-icono {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  background: #fff1ec;
+  font-size: 2.2rem;
+  animation: rebote 0.6s ease 0.2s both;
+}
+
+.confirmacion h2 {
+  margin: 0 0 6px;
+  font-family: var(--titulos);
+  font-size: 1.8rem;
+}
+
+.confirmacion-numero {
+  margin: 0 0 10px;
+  color: var(--cafe-suave);
+}
+
+.confirmacion-numero strong {
+  color: var(--cafe);
+  font-family: var(--titulos);
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+}
+
+.confirmacion-detalle {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.confirmacion-datos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.confirmacion-datos div {
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--crema);
+}
+
+.confirmacion-datos dt {
+  font-size: 0.85rem;
+  color: var(--cafe-suave);
+}
+
+.confirmacion-datos dd {
+  margin: 4px 0 0;
+  font-family: var(--titulos);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.estado {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: #e3f3e8;
+  color: var(--albahaca);
+  font-size: 1rem;
+}
+
+.confirmacion-id {
+  margin: 0 0 20px;
+  font-size: 0.8rem;
+  color: var(--cafe-suave);
+  word-break: break-all;
 }
 
 /* ---------- Formulario ---------- */
@@ -443,8 +720,24 @@ body {
     padding-top: 16px;
   }
 
+  /* En celular: pizza arriba, opciones en medio y el pedido al final */
   .panel-pizza {
-    position: static;
+    display: contents;
+  }
+
+  .vista-pizza {
+    order: 1;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .armador {
+    order: 2;
+  }
+
+  .tarjeta-resumen {
+    order: 3;
+    margin-top: 0;
   }
 
   .vista-pizza {

@@ -1,5 +1,6 @@
 import './style.css'
-import { obtenerMenu } from './api.js'
+import { obtenerMenu, crearPedido, ErrorDePedido } from './api.js'
+import { precioUnitario, MAX_CANTIDAD } from './precio.js'
 import { dinero } from './formato.js'
 import { crearPizza, imagenMasa, imagenIngrediente, precargarImagenes } from './pizza.js'
 
@@ -12,7 +13,9 @@ const estado = {
   sizeId: null,
   crustId: null,
   toppingIds: [],
+  quantity: 1,
 }
+let enviando = false
 
 const armador = document.querySelector('#armador')
 const estadoCarga = document.querySelector('#estado-carga')
@@ -23,6 +26,14 @@ const contenedorIngredientes = document.querySelector('#opciones-ingredientes')
 const contador = document.querySelector('#contador-ingredientes')
 const aviso = document.querySelector('#aviso')
 const resumen = document.querySelector('#resumen')
+const panelPedido = document.querySelector('#pedido')
+const botonMenos = document.querySelector('#menos')
+const botonMas = document.querySelector('#mas')
+const cantidad = document.querySelector('#cantidad')
+const total = document.querySelector('#total')
+const botonOrdenar = document.querySelector('#ordenar')
+const errorPedido = document.querySelector('#error-pedido')
+const confirmacion = document.querySelector('#confirmacion')
 
 // El tamaño es el precio base; masa e ingredientes se suman encima
 function textoPrecio(grupo, centavos) {
@@ -97,8 +108,48 @@ function mostrarAviso(texto) {
   aviso.classList.add('visible')
 }
 
+// ---------- Precio en vivo ----------
+
+const reducirMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)')
+let totalMostrado = 0
+let animacionTotal = null
+
+// El total "cuenta" desde el valor anterior hasta el nuevo
+function animarTotal(nuevo) {
+  cancelAnimationFrame(animacionTotal)
+  const inicio = totalMostrado
+  if (reducirMovimiento.matches || inicio === nuevo) {
+    totalMostrado = nuevo
+    total.textContent = dinero(nuevo)
+    return
+  }
+  total.classList.remove('cambio')
+  void total.offsetWidth // reinicia la animación de "salto"
+  total.classList.add('cambio')
+
+  const duracion = 450
+  const comienzo = performance.now()
+  const paso = (ahora) => {
+    const t = Math.min((ahora - comienzo) / duracion, 1)
+    const suave = 1 - (1 - t) ** 3 // empieza rápido y frena al final
+    totalMostrado = Math.round(inicio + (nuevo - inicio) * suave)
+    total.textContent = dinero(totalMostrado)
+    if (t < 1) animacionTotal = requestAnimationFrame(paso)
+  }
+  animacionTotal = requestAnimationFrame(paso)
+}
+
+function actualizarPedido() {
+  cantidad.textContent = estado.quantity
+  botonMenos.disabled = estado.quantity <= 1
+  botonMas.disabled = estado.quantity >= MAX_CANTIDAD
+  animarTotal(precioUnitario(menu, estado) * estado.quantity)
+}
+
 function actualizarPantalla() {
   pizza.actualizar(estado)
+  actualizarPedido()
+  errorPedido.textContent = ''
 
   contador.textContent = `${estado.toppingIds.length} / ${menu.maxToppings}`
   contador.classList.toggle('lleno', estado.toppingIds.length === menu.maxToppings)
@@ -142,9 +193,82 @@ armador.addEventListener('change', (evento) => {
   actualizarPantalla()
 })
 
+// ---------- Cantidad ----------
+
+botonMenos.addEventListener('click', () => {
+  estado.quantity = Math.max(1, estado.quantity - 1)
+  actualizarPedido()
+})
+
+botonMas.addEventListener('click', () => {
+  estado.quantity = Math.min(MAX_CANTIDAD, estado.quantity + 1)
+  actualizarPedido()
+})
+
+// ---------- Enviar el pedido ----------
+
+const TEXTO_ESTADO = { recibido: 'Recibido', preparando: 'Preparando', listo: 'Listo' }
+
+function mostrarConfirmacion(pedido) {
+  const item = pedido.items[0]
+  const ingredientes = item.toppingIds.map((id) => nombreDe(menu.toppings, id))
+  const masa = nombreDe(menu.crusts, item.crustId).toLowerCase()
+
+  confirmacion.querySelector('#numero-pedido').textContent = `#${pedido.id.slice(0, 8).toUpperCase()}`
+  confirmacion.querySelector('#detalle-pedido').textContent =
+    `${item.quantity} × ${nombreDe(menu.sizes, item.sizeId)}, masa ${masa}` +
+    (ingredientes.length ? `, con ${ingredientes.join(', ').toLowerCase()}` : '')
+  confirmacion.querySelector('#total-pedido').textContent = dinero(pedido.totalCents)
+  confirmacion.querySelector('#estado-pedido').textContent = TEXTO_ESTADO[pedido.status] ?? pedido.status
+  confirmacion.querySelector('#id-pedido').textContent = pedido.id
+  confirmacion.showModal()
+}
+
+botonOrdenar.addEventListener('click', async () => {
+  if (enviando) return // evita pedidos duplicados por doble clic
+  enviando = true
+  botonOrdenar.disabled = true
+  botonOrdenar.classList.add('enviando')
+  botonOrdenar.textContent = 'Enviando…'
+  errorPedido.textContent = ''
+
+  try {
+    // Solo se mandan las elecciones; el precio lo calcula la API
+    const pedido = await crearPedido([
+      { sizeId: estado.sizeId, crustId: estado.crustId, toppingIds: estado.toppingIds, quantity: estado.quantity },
+    ])
+    mostrarConfirmacion(pedido)
+  } catch (error) {
+    console.error(error)
+    errorPedido.textContent =
+      error instanceof ErrorDePedido ? error.message : 'Ocurrió un problema al enviar tu pedido. Inténtalo de nuevo.'
+  } finally {
+    enviando = false
+    botonOrdenar.disabled = false
+    botonOrdenar.classList.remove('enviando')
+    botonOrdenar.textContent = 'Ordenar'
+  }
+})
+
+// "Armar otra pizza": cierra la confirmación y empieza de cero
+document.querySelector('#otra-pizza').addEventListener('click', () => {
+  confirmacion.close()
+  reiniciarPizza()
+  window.scrollTo({ top: 0, behavior: reducirMovimiento.matches ? 'auto' : 'smooth' })
+})
+
 // Elige "mediana" y "tradicional" si existen; si no, la primera opción
 function opcionInicial(lista, preferida) {
   return lista.some((item) => item.id === preferida) ? preferida : lista[0]?.id
+}
+
+function reiniciarPizza() {
+  estado.sizeId = opcionInicial(menu.sizes, 'mediana')
+  estado.crustId = opcionInicial(menu.crusts, 'tradicional')
+  estado.toppingIds = []
+  estado.quantity = 1
+  pintarOpciones()
+  actualizarPantalla()
 }
 
 async function iniciar() {
@@ -166,17 +290,13 @@ async function iniciar() {
     return
   }
 
-  estado.sizeId = opcionInicial(menu.sizes, 'mediana')
-  estado.crustId = opcionInicial(menu.crusts, 'tradicional')
-  estado.toppingIds = []
-
   precargarImagenes(menu)
   vistaPizza.replaceChildren()
   pizza = crearPizza(vistaPizza, menu)
-  pintarOpciones()
-  actualizarPantalla()
+  reiniciarPizza()
 
   armador.classList.remove('cargando')
+  panelPedido.hidden = false
   estadoCarga.textContent = ''
 }
 
