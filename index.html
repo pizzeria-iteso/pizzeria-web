@@ -26,6 +26,23 @@
         <div class="tarjeta-resumen">
           <h2>Tu pizza</h2>
           <p id="resumen" aria-live="polite"></p>
+
+          <div id="pedido" class="pedido" hidden>
+            <div class="fila-pedido">
+              <span class="etiqueta">Cantidad</span>
+              <div class="cantidad" role="group" aria-label="Cantidad de pizzas">
+                <button type="button" id="menos" aria-label="Quitar una pizza">−</button>
+                <output id="cantidad" aria-live="polite">1</output>
+                <button type="button" id="mas" aria-label="Agregar una pizza">+</button>
+              </div>
+            </div>
+            <div class="fila-pedido fila-total">
+              <span class="etiqueta">Total</span>
+              <strong id="total" class="total" aria-live="polite"></strong>
+            </div>
+            <button type="button" id="ordenar" class="boton-principal">Ordenar</button>
+            <p id="error-pedido" class="error-pedido" role="alert"></p>
+          </div>
         </div>
       </section>
 
@@ -53,6 +70,25 @@
         <p id="aviso" class="aviso" role="status" aria-live="polite"></p>
       </form>
     </main>
+
+    <dialog id="confirmacion" class="confirmacion" aria-labelledby="titulo-confirmacion">
+      <div class="confirmacion-icono" aria-hidden="true">🍕</div>
+      <h2 id="titulo-confirmacion">¡Pedido recibido!</h2>
+      <p class="confirmacion-numero">Pedido <strong id="numero-pedido"></strong></p>
+      <p id="detalle-pedido" class="confirmacion-detalle"></p>
+      <dl class="confirmacion-datos">
+        <div>
+          <dt>Total</dt>
+          <dd id="total-pedido"></dd>
+        </div>
+        <div>
+          <dt>Estado</dt>
+          <dd><span id="estado-pedido" class="estado"></span></dd>
+        </div>
+      </dl>
+      <p class="confirmacion-id">Id del pedido: <code id="id-pedido"></code></p>
+      <button type="button" id="otra-pizza" class="boton-principal">Armar otra pizza</button>
+    </dialog>
 
     <script type="module" src="/src/main.js"></script>
   </body>
