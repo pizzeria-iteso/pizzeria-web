@@ -1,7 +1,8 @@
 import './style.css'
 import { obtenerMenu, crearPedido, ErrorDePedido } from './api.js'
 import { precioUnitario, MAX_CANTIDAD } from './precio.js'
-import { dinero } from './formato.js'
+import { dinero, numeroCorto } from './formato.js'
+import { configurarEstado, mostrarEstado, detenerEstado, refrescarEstado, guardarPedidoReciente } from './estado.js'
 import { crearPizza, imagenMasa, imagenIngrediente, precargarImagenes } from './pizza.js'
 
 // El menú llega de la API (GET /menu) al cargar la página
@@ -16,6 +17,7 @@ const estado = {
   quantity: 1,
 }
 let enviando = false
+let ultimoPedido = null
 
 const armador = document.querySelector('#armador')
 const estadoCarga = document.querySelector('#estado-carga')
@@ -34,6 +36,8 @@ const total = document.querySelector('#total')
 const botonOrdenar = document.querySelector('#ordenar')
 const errorPedido = document.querySelector('#error-pedido')
 const confirmacion = document.querySelector('#confirmacion')
+const vistaArmar = document.querySelector('#vista-armar')
+const vistaEstado = document.querySelector('#vista-estado')
 
 // El tamaño es el precio base; masa e ingredientes se suman encima
 function textoPrecio(grupo, centavos) {
@@ -214,7 +218,8 @@ function mostrarConfirmacion(pedido) {
   const ingredientes = item.toppingIds.map((id) => nombreDe(menu.toppings, id))
   const masa = nombreDe(menu.crusts, item.crustId).toLowerCase()
 
-  confirmacion.querySelector('#numero-pedido').textContent = `#${pedido.id.slice(0, 8).toUpperCase()}`
+  ultimoPedido = pedido
+  confirmacion.querySelector('#numero-pedido').textContent = numeroCorto(pedido.id)
   confirmacion.querySelector('#detalle-pedido').textContent =
     `${item.quantity} × ${nombreDe(menu.sizes, item.sizeId)}, masa ${masa}` +
     (ingredientes.length ? `, con ${ingredientes.join(', ').toLowerCase()}` : '')
@@ -237,6 +242,7 @@ botonOrdenar.addEventListener('click', async () => {
     const pedido = await crearPedido([
       { sizeId: estado.sizeId, crustId: estado.crustId, toppingIds: estado.toppingIds, quantity: estado.quantity },
     ])
+    guardarPedidoReciente(pedido)
     mostrarConfirmacion(pedido)
   } catch (error) {
     console.error(error)
@@ -256,6 +262,39 @@ document.querySelector('#otra-pizza').addEventListener('click', () => {
   reiniciarPizza()
   window.scrollTo({ top: 0, behavior: reducirMovimiento.matches ? 'auto' : 'smooth' })
 })
+
+// "Ver estado del pedido": va a la pantalla de estado de ese pedido
+document.querySelector('#ver-estado').addEventListener('click', () => {
+  confirmacion.close()
+  reiniciarPizza()
+  location.hash = `#pedido/${encodeURIComponent(ultimoPedido.id)}`
+})
+
+// ---------- Pantallas: armar pizza (#) o estado del pedido (#pedido/...) ----------
+
+configurarEstado({ menu: () => menu })
+
+function enrutar() {
+  const ruta = location.hash
+  const enEstado = ruta === '#pedido' || ruta.startsWith('#pedido/')
+  vistaArmar.hidden = enEstado
+  vistaEstado.hidden = !enEstado
+  // Marca en la navegación en qué pantalla estamos
+  document.querySelectorAll('.navegacion a').forEach((enlace) => {
+    const esActual = (enlace.getAttribute('href') === '#pedido') === enEstado
+    if (esActual) enlace.setAttribute('aria-current', 'page')
+    else enlace.removeAttribute('aria-current')
+  })
+  if (enEstado) {
+    const id = decodeURIComponent(ruta.slice('#pedido/'.length)).trim()
+    mostrarEstado(id || null)
+  } else {
+    detenerEstado()
+  }
+  window.scrollTo(0, 0)
+}
+
+window.addEventListener('hashchange', enrutar)
 
 // Elige "mediana" y "tradicional" si existen; si no, la primera opción
 function opcionInicial(lista, preferida) {
@@ -298,6 +337,8 @@ async function iniciar() {
   armador.classList.remove('cargando')
   panelPedido.hidden = false
   estadoCarga.textContent = ''
+  refrescarEstado() // si se abrió directo un pedido, ahora ya hay nombres del menú
 }
 
+enrutar()
 iniciar()
