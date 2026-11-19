@@ -18,9 +18,17 @@
       <span class="marca">🍕 Pizzería</span>
       <h1>Arma tu pizza</h1>
       <p>Elige tamaño, masa y hasta 5 ingredientes. La vemos crecer mientras la armas.</p>
+      <nav class="navegacion" aria-label="Secciones">
+        <a href="#">Armar pizza</a>
+        <a href="#pedido">Consultar mi pedido</a>
+      </nav>
     </header>
 
-    <main class="contenido">
+    <section id="vista-estado" class="vista-estado" aria-live="polite" hidden>
+      <div id="estado-contenido"></div>
+    </section>
+
+    <main id="vista-armar" class="contenido">
       <section class="panel-pizza" aria-label="Tu pizza">
         <div id="vista-pizza" class="vista-pizza"></div>
         <div class="tarjeta-resumen">
@@ -87,7 +95,10 @@
         </div>
       </dl>
       <p class="confirmacion-id">Id del pedido: <code id="id-pedido"></code></p>
-      <button type="button" id="otra-pizza" class="boton-principal">Armar otra pizza</button>
+      <div class="confirmacion-botones">
+        <button type="button" id="ver-estado" class="boton-principal">Ver estado del pedido</button>
+        <button type="button" id="otra-pizza" class="boton-secundario">Armar otra pizza</button>
+      </div>
     </dialog>
 
     <script type="module" src="/src/main.js"></script>

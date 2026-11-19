@@ -12,7 +12,29 @@ export async function obtenerMenu() {
 }
 
 // Error con un mensaje pensado para mostrárselo al cliente
-export class ErrorDePedido extends Error {}
+export class ErrorDePedido extends Error {
+  constructor(mensaje, { noExiste = false } = {}) {
+    super(mensaje)
+    this.noExiste = noExiste
+  }
+}
+
+// Consulta un pedido y su estado
+export async function obtenerPedido(id) {
+  let respuesta
+  try {
+    respuesta = await fetch(`${API_URL}/orders/${encodeURIComponent(id)}`)
+  } catch {
+    throw new ErrorDePedido('No pudimos conectar con la pizzería. Revisa tu conexión e inténtalo de nuevo.')
+  }
+  if (respuesta.status === 404) {
+    throw new ErrorDePedido('No encontramos un pedido con ese número. Revisa que el id esté completo.', { noExiste: true })
+  }
+  if (!respuesta.ok) {
+    throw new ErrorDePedido('Ocurrió un problema al consultar tu pedido. Inténtalo de nuevo.')
+  }
+  return respuesta.json()
+}
 
 // Envía el pedido. El total lo calcula la API, nunca se manda un precio.
 export async function crearPedido(pizzas) {
