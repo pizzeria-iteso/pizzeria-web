@@ -1,0 +1,130 @@
+# Pipeline del frontend
+# - En cada PR a main: build.
+# - En cada merge a main: build con la API de dev → Pages dev → aprobación → build con la API de prod → Pages prod.
+name: Web
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# En un PR, si llega un commit nuevo se cancela la ejecución anterior.
+# En main nunca se cancela, para no dejar un deploy a medias.
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar
+        run: npm run build
+
+  deploy-dev:
+    name: Deploy a dev
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: https://pizzeria-web-dev.pages.dev
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Variables de build: Vite las mete en el código al compilar
+      VITE_API_URL: https://pizzeria-api-dev.jonathan-arranaga.workers.dev
+      VITE_AMBIENTE: dev
+      URL_WEB: https://pizzeria-web-dev.pages.dev
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # VITE_VERSION = primeros 7 caracteres del commit, para seguir el cambio de dev a prod
+      - name: Compilar con la API de dev
+        run: VITE_VERSION="${GITHUB_SHA::7}" npm run build
+
+      - name: Publicar en Pages (dev)
+        run: npx wrangler pages deploy dist --project-name pizzeria-web-dev --branch main --commit-hash "$GITHUB_SHA" --commit-dirty=true
+
+      - name: Comprobar que responde
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors "$URL_WEB/" | grep -q "Arma tu pizza"
+          {
+            echo "## 🚀 Frontend publicado en dev"
+            echo ""
+            echo "- Página: $URL_WEB"
+            echo "- API: $VITE_API_URL"
+            echo "- Versión: ${GITHUB_SHA::7}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-prod:
+    name: Deploy a prod
+    if: github.event_name == 'push'
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    # El ambiente prod pide aprobación de un reviewer antes de correr este trabajo
+    environment:
+      name: prod
+      url: https://pizzeria-web-prod.pages.dev
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      VITE_API_URL: https://pizzeria-api-prod.jonathan-arranaga.workers.dev
+      VITE_AMBIENTE: prod
+      URL_WEB: https://pizzeria-web-prod.pages.dev
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar con la API de prod
+        run: VITE_VERSION="${GITHUB_SHA::7}" npm run build
+
+      - name: Publicar en Pages (prod)
+        run: npx wrangler pages deploy dist --project-name pizzeria-web-prod --branch main --commit-hash "$GITHUB_SHA" --commit-dirty=true
+
+      - name: Comprobar que responde
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors "$URL_WEB/" | grep -q "Arma tu pizza"
+          {
+            echo "## 🚀 Frontend publicado en prod"
+            echo ""
+            echo "- Página: $URL_WEB"
+            echo "- API: $VITE_API_URL"
+            echo "- Versión: ${GITHUB_SHA::7}"
+          } >> "$GITHUB_STEP_SUMMARY"

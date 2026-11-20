@@ -340,5 +340,9 @@ async function iniciar() {
   refrescarEstado() // si se abrió directo un pedido, ahora ya hay nombres del menú
 }
 
+// Versión y ambiente, para seguir un cambio de dev a prod (los pone el pipeline al compilar)
+document.querySelector('#version').textContent =
+  `Versión ${import.meta.env.VITE_VERSION ?? 'local'} · ${import.meta.env.VITE_AMBIENTE ?? 'local'}`
+
 enrutar()
 iniciar()
