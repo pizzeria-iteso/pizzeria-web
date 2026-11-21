@@ -1049,6 +1049,15 @@ body {
   }
 }
 
+/* ---------- Pie de página ---------- */
+.pie {
+  padding: 0 16px 28px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--cafe-suave);
+  opacity: 0.8;
+}
+
 /* ---------- Celular ---------- */
 @media (max-width: 820px) {
   .contenido {
